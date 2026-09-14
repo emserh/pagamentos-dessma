@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Desempenho · Pagamentos DESSMA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark"><img src="logo.svg" alt="DESSMA"></div>
+    <div class="brand-text">
+      <h1>Painel de Desempenho — Pagamentos DESSMA</h1>
+      <p>Controle de Processos de Pagamento · GMA (RGT-0023)</p>
+    </div>
+  </div>
+  <div class="header-updated" id="headerUpdated"></div>
+</header>
+
+<div class="fonte-dados">
+  <span class="fd-label">Fonte de dados</span>
+  <div class="upload-zone">
+    <button class="file-btn" id="btnRefresh" title="Buscar dados atualizados do Google Sheets">
+      🔄 Atualizar dados
+    </button>
+    <button class="file-btn secondary-btn" title="Carregar arquivo .xlsx manualmente">
+      📂 Carregar .xlsx
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </button>
+  </div>
+  <div class="file-status" id="fileStatus">Carregando dados…</div>
+</div>
+
+<div class="tab-bar" id="tabBar" style="display:none">
+  <button class="tab-btn active" data-tab="visao"><span class="dot"></span>Visão Executiva</button>
+  <button class="tab-btn" data-tab="desempenho"><span class="dot"></span>Desempenho</button>
+  <button class="tab-btn" data-tab="risco"><span class="dot"></span>Risco &amp; Gargalos</button>
+  <button class="tab-btn" data-tab="criticos"><span class="dot"></span>Processos Críticos</button>
+</div>
+
+<main>
+
+  <div class="empty-state" id="emptyState">
+    <div class="icon">📊</div>
+    <h2>Carregando dados ou aguardando planilha</h2>
+    <p>O painel conecta-se diretamente ao Google Sheets a cada carregamento ou refresh da página. Você também pode carregar o arquivo <strong>.xlsx</strong> manualmente pelo botão acima ou configurar a URL da sua planilha.</p>
+  </div>
+
+  <div id="dashboard">
+
+    <div class="pg-warning" id="pgWarning"></div>
+
+    <div class="filter-bar" id="filterBar">
+      <span class="fd-label">Filtros</span>
+      <div class="filter-group">
+        <label>Ano de competência</label>
+        <div class="ms" id="msAno"></div>
+      </div>
+      <div class="filter-group">
+        <label>Gerência / setor de origem</label>
+        <div class="ms" id="msSetor"></div>
+      </div>
+      <div class="filter-group">
+        <label>Status liberação</label>
+        <div class="ms" id="msStatus"></div>
+      </div>
+      <button class="filter-clear" id="btnClearFilters">Limpar filtros</button>
+      <div class="filter-count" id="filterCount"></div>
+    </div>
+
+    <div class="tab-panel active" data-panel="visao">
+      <div class="section-title"><h2>Visão geral</h2></div>
+      <div class="kpi-grid" id="kpiTop"></div>
+
+      <div class="section-title"><h2>Análise gráfica</h2></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>① Evolução mensal</h3>
+          <p class="note">Processos recebidos × processos pagos, por mês de abertura</p>
+          <div class="canvas-wrap"><canvas id="chartEvol"></canvas><div class="chart-empty" id="chartEvolEmpty">Sem dados para os filtros selecionados</div></div>
+        </div>
+        <div class="chart-card-wide" style="margin-top:0">
+          <h3>⑤ Faturado × Pago por competência (mensalizado)</h3>
+          <p class="note">Valor bruto faturado e valor efetivamente pago, agrupados pelo mês de competência do processo</p>
+          <div class="canvas-wrap"><canvas id="chartCompetencia"></canvas><div class="chart-empty" id="chartCompetenciaEmpty">Sem dados para os filtros selecionados</div></div>
+          <div class="comp-totals" id="compTotals"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="desempenho">
+      <div class="section-title"><h2>Desempenho</h2></div>
+      <div class="kpi-grid" id="kpiPerf"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="risco">
+      <div class="section-title"><h2>Risco / gargalo</h2></div>
+      <div class="kpi-grid" id="kpiRisk"></div>
+
+      <div class="section-title"><h2>Análise gráfica</h2></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>② Aging da carteira</h3>
+          <p class="note">Processos pendentes por faixa de dias em aberto</p>
+          <div class="canvas-wrap"><canvas id="chartAging"></canvas><div class="chart-empty" id="chartAgingEmpty">Sem dados para os filtros selecionados</div></div>
+        </div>
+        <div class="chart-card">
+          <h3>③ Gargalos por setor</h3>
+          <p class="note">Valor pendente por setor atual do processo</p>
+          <div class="canvas-wrap"><canvas id="chartSetor"></canvas><div class="chart-empty" id="chartSetorEmpty">Sem dados para os filtros selecionados</div></div>
+        </div>
+        <div class="chart-card">
+          <h3>④ Performance das empresas</h3>
+          <p class="note">Top 10 fornecedores por valor pendente</p>
+          <div class="canvas-wrap"><canvas id="chartEmpresas"></canvas><div class="chart-empty" id="chartEmpresasEmpty">Sem dados para os filtros selecionados</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="criticos">
+      <div class="section-title"><h2>Processos críticos</h2></div>
+      <div class="table-card">
+        <div class="table-head">
+          <h2>🚨 Processos críticos</h2>
+          <div class="sort-controls">
+            Ordenar por:
+            <button class="sort-btn active" id="sortDias">Dias em aberto</button>
+            <button class="sort-btn" id="sortValor">Valor em risco</button>
+          </div>
+        </div>
+        <div class="table-search">
+          <input type="text" id="critSearch" placeholder="Buscar por empresa, processo ou contrato…">
+          <span class="count" id="critSearchCount"></span>
+        </div>
+        <div class="table-scroll">
+          <table class="crit">
+            <thead>
+              <tr>
+                <th>Processo</th><th>Empresa</th><th>Contrato</th><th>Valor (R$)</th>
+                <th>Dias em aberto</th><th>Setor atual</th>
+              </tr>
+            </thead>
+            <tbody id="critBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot" id="critFoot"></div>
+      </div>
+    </div>
+
+    <footer class="meta" id="footerMeta"></footer>
+  </div>
+
+</main>
+
+<script src="app.js"></script>
+
+</body>
+</html>
