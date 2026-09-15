@@ -48,7 +48,10 @@ const GOOGLE_SHEETS_URL = '/api/sheets';
 // Limpa qualquer resquício anterior de URL salva no navegador
 try { localStorage.removeItem('DESSMA_GSHEETS_URL'); } catch(e){}
 
-document.getElementById('fileInput').addEventListener('change', handleFile);
+const fileInput = document.getElementById('fileInput');
+if (fileInput){
+  fileInput.addEventListener('change', handleFile);
+}
 
 const btnRefresh = document.getElementById('btnRefresh');
 if (btnRefresh){
@@ -118,7 +121,7 @@ async function carregarGoogleSheets(isManual = false){
   const refreshBtn = document.getElementById('btnRefresh');
 
   if (!url){
-    statusEl.textContent = 'Nenhuma planilha configurada. Carregue um arquivo .xlsx manualmente.';
+    statusEl.textContent = 'Nenhuma planilha configurada. Verifique a URL do Google Sheets.';
     return false;
   }
 
