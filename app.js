@@ -1,5 +1,3 @@
-/* ==== painel_dessma.html — lógica de leitura, cálculo e renderização ==== */
-
 const SHEET_NAME = 'ProcessosDESSMA';
 const SHEET_NAME_PG = 'PG';
 const HEADER_ROW_INDEX = 1;
@@ -45,8 +43,6 @@ const PALETTE = {
   grid: '#e9edf0', text: '#647184'
 };
 
-// Rota interna da Vercel (Serverless Function) — não expõe a URL do Google Sheets
-// A variável de ambiente GOOGLE_SHEETS_URL é lida apenas no servidor.
 const GOOGLE_SHEETS_URL = '/api/sheets';
 
 // Limpa qualquer resquício anterior de URL salva no navegador
