@@ -1,23 +1,30 @@
-export default async function handler(req, res) {
-  // Trata pré-requisição CORS (OPTIONS)
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
+exports.handler = async function (event, context) {
+  // Trata requisição OPTIONS (CORS)
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
       },
-    });
+      body: "",
+    };
   }
 
   const targetUrl = process.env.GOOGLE_SHEETS_URL;
+
   if (!targetUrl) {
-    return new Response(
-      JSON.stringify({
+    return {
+      statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({
         error: "Variável GOOGLE_SHEETS_URL não foi configurada no Netlify.",
       }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    };
   }
 
   try {
@@ -27,37 +34,46 @@ export default async function handler(req, res) {
 
     const response = await fetch(fetchUrl, {
       method: "GET",
-      headers: { Accept: "application/json, text/plain, */*" },
+      headers: {
+        Accept: "application/json, text/plain, */*",
+      },
     });
 
     if (!response.ok) {
-      return new Response(
-        JSON.stringify({
-          error: `O Google Apps Script retornou status ${response.status}`,
-        }),
-        {
-          status: response.status,
-          headers: { "Content-Type": "application/json" },
+      return {
+        statusCode: response.status,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
         },
-      );
+        body: JSON.stringify({
+          error: `O Google retornou status ${response.status}`,
+        }),
+      };
     }
 
     const data = await response.json();
 
-    return new Response(JSON.stringify(data), {
-      status: 200,
+    return {
+      statusCode: 200,
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": "s-maxage=60, stale-while-revalidate=300",
       },
-    });
+      body: JSON.stringify(data),
+    };
   } catch (err) {
-    return new Response(
-      JSON.stringify({
+    console.error("Erro na rota /api/sheets:", err);
+    return {
+      statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({
         error: err.message || "Erro ao consultar Google Sheets",
       }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    };
   }
-}
+};
