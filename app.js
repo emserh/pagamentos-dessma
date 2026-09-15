@@ -131,7 +131,8 @@ async function carregarGoogleSheets(isManual = false){
   }
   statusEl.innerHTML = '<span class="loading-spinner"></span> Conectando ao Google Sheets…';
 
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = 1;
+  const REQUEST_TIMEOUT_MS = 15000;
   let lastError = null;
 
   try {
@@ -139,12 +140,22 @@ async function carregarGoogleSheets(isManual = false){
       try {
         if (attempt > 1){
           statusEl.innerHTML = '<span class="loading-spinner"></span> Reconectando… (tentativa ' + attempt + '/' + (MAX_RETRIES + 1) + ')';
-          await new Promise(r => setTimeout(r, 1200));
+          await new Promise(r => setTimeout(r, 300));
         }
 
-        // O timestamp evita que o browser sirva uma resposta antiga em cache
-        const fetchUrl = url + '?_ts=' + Date.now();
-        const res = await fetch(fetchUrl, { method: 'GET', cache: 'no-store' });
+        const fetchUrl = isManual ? url + '?_ts=' + Date.now() : url;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        let res;
+        try {
+          res = await fetch(fetchUrl, {
+            method: 'GET',
+            cache: isManual ? 'no-store' : 'default',
+            signal: controller.signal
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         if (!res.ok){
           const errBody = await res.json().catch(() => ({}));
@@ -862,6 +873,15 @@ document.getElementById('sortValor').addEventListener('click', () => {
 /* ---------- Inicialização automática na abertura da página ---------- */
 function initApp(){
   if (GOOGLE_SHEETS_URL){
+    try {
+      const cacheRaw = localStorage.getItem('DESSMA_CACHE_DATA');
+      if (cacheRaw){
+        const cache = JSON.parse(cacheRaw);
+        if (Array.isArray(cache.aoaD) && cache.aoaD.length){
+          processData(cache.aoaD, cache.aoaP, 'Google Sheets (em cache)', cache.sheetsFound);
+        }
+      }
+    } catch(e){}
     carregarGoogleSheets();
   } else {
     const statusEl = document.getElementById('fileStatus');
