@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   const targetUrl = process.env.GOOGLE_SHEETS_URL;
   if (!targetUrl) {
     return res.status(500).json({
-      error: 'Variável de ambiente GOOGLE_SHEETS_URL não foi configurada na Vercel.'
+      error: 'Variável de ambiente GOOGLE_SHEETS_URL não foi configurada'
     });
   }
 
