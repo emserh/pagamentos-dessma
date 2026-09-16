@@ -140,8 +140,8 @@ async function carregarGoogleSheets(isManual = false){
 
   try {
     for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++){
+      let timedOut = false;
       try {
-        let timedOut = false;
         if (attempt > 1){
           statusEl.innerHTML = '<span class="loading-spinner"></span> Reconectando… (tentativa ' + attempt + '/' + (MAX_RETRIES + 1) + ')';
           await new Promise(r => setTimeout(r, 300));
@@ -373,12 +373,14 @@ function computeRow(row, fonte){
   // ("Não pago", ou um setor de bloqueio na PG), ainda está pendente.
   const paymentDate = parseFlexDate(row[IDX.situacao]);
   const pago = paymentDate !== null;
+  const saidaGcont = parseFlexDate(row[IDX.saidaGcont]);
   const financeiro = parseFlexDate(row[IDX.financeiro]);
   const dataRet2 = parseFlexDate(row[IDX.dataRet2]);
   const dataRet3 = parseFlexDate(row[IDX.dataRet3]);
   const remanej = row[IDX.remanejamento];
 
   const diasAbertura = (networkDays(data, TODAY) || 0) - 1;
+  const diasAteSaidaGcont = saidaGcont ? calendarDays(data, saidaGcont) : null;
   const diasAteFinanceiro = financeiro ? calendarDays(data, financeiro) : null;
   const diasNoFinanceiro = financeiro ? calendarDays(financeiro, pago ? paymentDate : TODAY) : null;
   const diasParaPagamento = pago ? calendarDays(data, paymentDate) : null;
@@ -390,7 +392,7 @@ function computeRow(row, fonte){
     setorAtual: row[IDX.setorAtual] || '(sem setor)', setorOrigem: row[IDX.setorOrigem] || '(sem setor)',
     statusLib: (row[IDX.statusLib] || '').toString().trim().toUpperCase(),
     valor, data, pago, paymentDate,
-    diasAbertura: Math.max(diasAbertura, 0), diasAteFinanceiro, diasNoFinanceiro, diasParaPagamento,
+    diasAbertura: Math.max(diasAbertura, 0), diasAteSaidaGcont, diasAteFinanceiro, diasNoFinanceiro, diasParaPagamento,
     retrabalho, remanejado, competenciaKey: parseCompetencia(row[IDX.competencia])
   };
 }
@@ -605,6 +607,7 @@ function renderTopCards(records, pendentes, pagos){
 
 function renderPerfCards(records, pendentes, pagos){
   const temposPagamento = pagos.map(r=>r.diasParaPagamento).filter(v=>v!=null);
+  const comSaidaGcont = records.filter(r=>r.diasAteSaidaGcont!=null);
   const comFinanceiro = records.filter(r=>r.diasAteFinanceiro!=null);
   const noFinanceiro = records.filter(r=>r.diasNoFinanceiro!=null);
 

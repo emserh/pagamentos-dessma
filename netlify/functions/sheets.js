@@ -12,7 +12,9 @@ exports.handler = async function (event, context) {
     };
   }
 
-  const targetUrl = process.env.GOOGLE_SHEETS_URL;
+  const targetUrl = (process.env.GOOGLE_SHEETS_URL || "")
+    .trim()
+    .replace(/^(["'])|(["'])$/g, "");
 
   if (!targetUrl) {
     return {
@@ -29,6 +31,21 @@ exports.handler = async function (event, context) {
 
   try {
     const cleanUrl = targetUrl.replace(/\/u\/\d+\//, "/");
+    try {
+      new URL(cleanUrl);
+    } catch (urlError) {
+      return {
+        statusCode: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          error: "GOOGLE_SHEETS_URL está inválida. Configure uma URL completa iniciando com https://.",
+        }),
+      };
+    }
+
     const fetchUrl =
       cleanUrl + (cleanUrl.includes("?") ? "&" : "?") + "_ts=" + Date.now();
 
