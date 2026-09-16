@@ -132,12 +132,13 @@ async function carregarGoogleSheets(isManual = false){
   statusEl.innerHTML = '<span class="loading-spinner"></span> Conectando ao Google Sheets…';
 
   const MAX_RETRIES = 1;
-  const REQUEST_TIMEOUT_MS = 15000;
+  const REQUEST_TIMEOUT_MS = 30000;
   let lastError = null;
 
   try {
     for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++){
       try {
+        let timedOut = false;
         if (attempt > 1){
           statusEl.innerHTML = '<span class="loading-spinner"></span> Reconectando… (tentativa ' + attempt + '/' + (MAX_RETRIES + 1) + ')';
           await new Promise(r => setTimeout(r, 300));
@@ -145,7 +146,10 @@ async function carregarGoogleSheets(isManual = false){
 
         const fetchUrl = isManual ? url + '?_ts=' + Date.now() : url;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, REQUEST_TIMEOUT_MS);
         let res;
         try {
           res = await fetch(fetchUrl, {
@@ -196,7 +200,9 @@ async function carregarGoogleSheets(isManual = false){
         return true;
 
       } catch(err){
-        lastError = err;
+        lastError = timedOut
+          ? new Error('A conexão com o Google Sheets excedeu o tempo limite de 30 segundos')
+          : err;
         console.warn('Tentativa ' + attempt + ' falhou:', err);
       }
     }
