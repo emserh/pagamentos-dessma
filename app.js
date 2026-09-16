@@ -129,7 +129,10 @@ async function carregarGoogleSheets(isManual = false){
     refreshBtn.disabled = true;
     refreshBtn.innerHTML = '<span class="loading-spinner"></span> Atualizando…';
   }
-  statusEl.innerHTML = '<span class="loading-spinner"></span> Conectando ao Google Sheets…';
+  const dashboardReady = document.getElementById('dashboard')?.classList.contains('visible');
+  statusEl.innerHTML = dashboardReady
+    ? '<span class="loading-spinner"></span> Dados disponíveis · atualizando em segundo plano…'
+    : '<span class="loading-spinner"></span> Conectando ao Google Sheets…';
 
   const MAX_RETRIES = 1;
   const REQUEST_TIMEOUT_MS = 30000;
