@@ -536,7 +536,12 @@ function renderAll(records){
 
 function renderEmptyDashboard(){
   const topLabels = ['Processos em carteira', 'Processos pendentes', 'Valor pendente', '% de processos pagos'];
-  const perfLabels = ['Tempo médio de pagamento', 'Tempo mediano de pagamento', 'Tempo médio até o Financeiro', 'Tempo médio no Financeiro'];
+  const perfLabels = [
+    "Tempo médio de pagamento",
+    "Tempo médio da 1ª saída GCONT",
+    "Tempo médio até o Financeiro",
+    "Tempo médio no Financeiro",
+  ];
   const riskLabels = ['Processos &gt;180 dias', 'Valor &gt;180 dias', '% com retrabalho', '% com remanejamento'];
 
   document.getElementById('kpiTop').innerHTML = topLabels.map(l => kpiCardEmpty(l)).join('');
@@ -595,16 +600,36 @@ function renderPerfCards(records, pendentes, pagos){
   const noFinanceiro = records.filter(r=>r.diasNoFinanceiro!=null);
 
   const html = [
-    kpiCard('Tempo médio de pagamento', temposPagamento.length ? fmtDias(avg(temposPagamento)) : '—',
-      temposPagamento.length ? 'Da abertura até a data de pagamento' : 'Ainda sem processos marcados como pagos'),
-    kpiCard('Tempo mediano de pagamento', temposPagamento.length ? fmtDias(median(temposPagamento)) : '—',
-      temposPagamento.length ? 'Menos sensível a casos extremos' : 'Ainda sem processos marcados como pagos'),
-    kpiCard('Tempo médio até o Financeiro', comFinanceiro.length ? fmtDias(avg(comFinanceiro.map(r=>r.diasAteFinanceiro))) : '—',
-      'Base: ' + comFinanceiro.length + ' processos que já chegaram na GFIN'),
-    kpiCard('Tempo médio no Financeiro', noFinanceiro.length ? fmtDias(avg(noFinanceiro.map(r=>r.diasNoFinanceiro))) : '—',
-      'Contando até hoje para quem ainda não foi pago')
-  ].join('');
-  document.getElementById('kpiPerf').innerHTML = html;
+    kpiCard(
+      "Tempo médio de pagamento",
+      temposPagamento.length ? fmtDias(avg(temposPagamento)) : "—",
+      temposPagamento.length
+        ? "Da abertura até a data de pagamento"
+        : "Ainda sem processos marcados como pagos",
+    ),
+    kpiCard(
+      "Tempo médio da 1ª saída GCONT",
+      comSaidaGcont.length
+        ? fmtDias(avg(comSaidaGcont.map((r) => r.diasAteSaidaGcont)))
+        : "—",
+      "Base: " + comSaidaGcont.length + " processos com 1ª saída registrada",
+    ),
+    kpiCard(
+      "Tempo médio até o Financeiro",
+      comFinanceiro.length
+        ? fmtDias(avg(comFinanceiro.map((r) => r.diasAteFinanceiro)))
+        : "—",
+      "Base: " + comFinanceiro.length + " processos que já chegaram na GFIN",
+    ),
+    kpiCard(
+      "Tempo médio no Financeiro",
+      noFinanceiro.length
+        ? fmtDias(avg(noFinanceiro.map((r) => r.diasNoFinanceiro)))
+        : "—",
+      "Contando até hoje para quem ainda não foi pago",
+    ),
+  ].join("");
+  document.getElementById("kpiPerf").innerHTML = html;
 }
 
 function renderRiskCards(records, pendentes){
